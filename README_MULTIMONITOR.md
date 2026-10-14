@@ -14,7 +14,8 @@ Para permitir la alternancia fluida de monitores remotos sin desconectar ni rein
 - **Carga Útil (Payload):** Identificador numérico de la pantalla destino (1 byte):
   - `0`: Pantalla 1 (`DISPLAY_TARGET_P1`)
   - `1`: Pantalla 2 (`DISPLAY_TARGET_P2`)
-  - `2`: Mosaico / Ambas pantallas (`DISPLAY_TARGET_MOSAIC`)
+  - `2`: Mosaico Horizontal (`DISPLAY_TARGET_MOSAIC`)
+  - `3`: Mosaico Vertical (`DISPLAY_TARGET_MOSAIC_V`)
 
 ### Capa Core C (`moonlight-common-c`)
 Se implementó en `src/Limelight.h` y `src/ControlStream.c` la API nativa:
@@ -24,6 +25,7 @@ Se implementó en `src/Limelight.h` y `src/ControlStream.c` la API nativa:
 #define DISPLAY_TARGET_P1        0
 #define DISPLAY_TARGET_P2        1
 #define DISPLAY_TARGET_MOSAIC    2
+#define DISPLAY_TARGET_MOSAIC_V  3
 
 // Envía la solicitud de cambio de monitor al host
 int LiSendDisplayTarget(uint8_t displayTarget);
@@ -39,7 +41,8 @@ Durante la sesión activa de streaming, el usuario puede alternar instantáneame
 |---|---|---|
 | **`Ctrl + Alt + Shift + 1`** (o Numpad 1) | Conmuta a la primera pantalla remota | Pantalla 1 (P1) |
 | **`Ctrl + Alt + Shift + 2`** (o Numpad 2) | Conmuta a la segunda pantalla remota | Pantalla 2 (P2) |
-| **`Ctrl + Alt + Shift + M`** | Muestra el escritorio completo combinado | Mosaico (Ambas pantallas) |
+| **`Ctrl + Alt + Shift + M`** | Muestra ambas pantallas lado a lado | Mosaico Horizontal |
+| **`Ctrl + Alt + Shift + 3`** (o Numpad 3) | Muestra ambas pantallas una arriba y otra abajo | Mosaico Vertical |
 
 > **Nota sobre compatibilidad:** El atajo previo de Moonlight `Ctrl + Alt + Shift + M` (que alternaba el modo de captura del ratón) ha sido reasignado a `Ctrl + Alt + Shift + F10` para garantizar que la letra **`M`** quede reservada intuitivamente para **Mosaico**.
 
@@ -51,10 +54,10 @@ Durante la sesión activa de streaming, el usuario puede alternar instantáneame
 Al presionar cualquiera de los atajos de cambio de pantalla o al iniciar el stream:
 1. Se activa en la parte superior central de la ventana de renderizado un selector visual interactivo:
    ```
-   [ *1: Pantalla 1* ]    [ 2: Pantalla 2 ]    [ M: Mosaico ]
+   [ *1: Pantalla 1* ]   [ 2: Pantalla 2 ]   [ M: Mosaico H ]   [ V: Mosaico V ]
    ```
    El elemento con asteriscos `*` resalta cuál es la pantalla activa actual.
-2. **Interactividad con ratón:** El overlay es interactivo con el puntero. Si el usuario hace clic izquierdo sobre el tercio izquierdo, central o derecho de la franja superior durante su visualización, la sesión conmuta inmediatamente a P1, P2 o Mosaico, respectivamente.
+2. **Interactividad con ratón:** El overlay es interactivo con el puntero. Si el usuario hace clic izquierdo sobre cualquiera de los 4 cuadrantes de la franja superior durante su visualización, la sesión conmuta inmediatamente a P1, P2, Mosaico H o Mosaico V, respectivamente.
 3. El overlay permanece visible durante 3.5 segundos tras cada interacción y se desvanece automáticamente para no interferir con la experiencia visual o de juego.
 4. Soporte nativo integrado en todos los renderizadores de vídeo de Moonlight:
    - DirectX 11 (`d3d11va`)
