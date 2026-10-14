@@ -812,6 +812,61 @@ Flickable {
                     ToolTip.text: qsTr("Fullscreen generally provides the best performance, but borderless windowed may work better with features like macOS Spaces, Alt+Tab, screenshot tools, on-screen overlays, etc.")
                 }
 
+                Text {
+                    id: targetDisplayTitle
+                    text: qsTr("Multi-Monitor / Pantalla de transmisión")
+                    font.bold: true
+                    font.pointSize: 13
+                    color: Material.accent
+                }
+
+                AutoResizingComboBox {
+                    Component.onCompleted: {
+                        var savedTarget = StreamingPreferences.targetDisplay
+                        for (var i = 0; i < targetDisplayListModel.count; i++) {
+                            if (savedTarget === targetDisplayListModel.get(i).val) {
+                                currentIndex = i
+                                break
+                            }
+                        }
+                    }
+
+                    id: targetDisplayComboBox
+                    hoverEnabled: true
+                    textRole: "text"
+                    model: ListModel {
+                        id: targetDisplayListModel
+                        ListElement {
+                            text: qsTr("Pantalla 1 (P1)")
+                            val: 0
+                        }
+                        ListElement {
+                            text: qsTr("Pantalla 2 (P2)")
+                            val: 1
+                        }
+                        ListElement {
+                            text: qsTr("Mosaico Horizontal (M)")
+                            val: 2
+                        }
+                        ListElement {
+                            text: qsTr("Mosaico Vertical (3)")
+                            val: 3
+                        }
+                    }
+                    onActivated: {
+                        StreamingPreferences.targetDisplay = model.get(currentIndex).val
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 5000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Selecciona la pantalla remota activa por defecto o el modo Mosaico (Horizontal o Vertical). Atajos en streaming: Ctrl+Alt+Shift+1 (P1), Ctrl+Alt+Shift+2 (P2), Ctrl+Alt+Shift+M (Mosaico H), Ctrl+Alt+Shift+3 (Mosaico V).")
+                }
+
+                DisplaySelector {
+                    width: parent.width
+                }
+
                 Row {
                     spacing: 5
                     width: parent.width

@@ -584,7 +584,9 @@ Session::Session(NvComputer* computer, NvApp& app, StreamingPreferences *prefere
       m_OpusDecoder(nullptr),
       m_AudioRenderer(nullptr),
       m_AudioSampleCount(0),
-      m_DropAudioEndTime(0)
+      m_DropAudioEndTime(0),
+      m_DisplayTarget(preferences ? static_cast<uint8_t>(preferences->targetDisplay) : 0),
+      m_DisplaySelectorTimer(0)
 {
 }
 
@@ -592,6 +594,11 @@ Session::~Session()
 {
     // NB: This may not get destroyed for a long time! Don't put any non-trivial cleanup here.
     // Use Session::exec() or DeferredSessionCleanupTask instead.
+
+    if (m_DisplaySelectorTimer != 0) {
+        SDL_RemoveTimer(m_DisplaySelectorTimer);
+        m_DisplaySelectorTimer = 0;
+    }
 
     SDL_DestroyMutex(m_DecoderLock);
 }
@@ -1558,6 +1565,53 @@ void Session::notifyMouseEmulationMode(bool enabled)
     }
 }
 
+Uint32 Session::hideDisplaySelectorTimerCallback(Uint32 interval, void* param)
+{
+    Q_UNUSED(interval);
+    Session* session = static_cast<Session*>(param);
+    session->m_OverlayManager.setOverlayState(Overlay::OverlayDisplaySelector, false);
+    session->m_DisplaySelectorTimer = 0;
+    return 0;
+}
+
+void Session::setDisplayTarget(int target)
+{
+    m_DisplayTarget = static_cast<uint8_t>(target);
+    LiSendDisplayTarget(m_DisplayTarget);
+    if (m_InputHandler != nullptr) {
+        m_InputHandler->setDisplayTarget(m_DisplayTarget);
+    }
+    showDisplaySelectorOverlay(3500);
+    emit displayTargetChanged(m_DisplayTarget);
+}
+
+void Session::updateDisplaySelectorOverlay()
+{
+    char buf[256];
+    const char* p1 = (m_DisplayTarget == DISPLAY_TARGET_P1) ? "[ *1: Pantalla 1* ]" : "[ 1: Pantalla 1 ]";
+    const char* p2 = (m_DisplayTarget == DISPLAY_TARGET_P2) ? "[ *2: Pantalla 2* ]" : "[ 2: Pantalla 2 ]";
+    const char* pmh = (m_DisplayTarget == DISPLAY_TARGET_MOSAIC) ? "[ *M: Mosaico H* ]" : "[ M: Mosaico H ]";
+    const char* pmv = (m_DisplayTarget == DISPLAY_TARGET_MOSAIC_V) ? "[ *V: Mosaico V* ]" : "[ V: Mosaico V ]";
+
+    snprintf(buf, sizeof(buf), "%s   %s   %s   %s", p1, p2, pmh, pmv);
+    m_OverlayManager.updateOverlayText(Overlay::OverlayDisplaySelector, buf);
+}
+
+void Session::showDisplaySelectorOverlay(int timeoutMs)
+{
+    updateDisplaySelectorOverlay();
+    m_OverlayManager.setOverlayState(Overlay::OverlayDisplaySelector, true);
+
+    if (m_DisplaySelectorTimer != 0) {
+        SDL_RemoveTimer(m_DisplaySelectorTimer);
+        m_DisplaySelectorTimer = 0;
+    }
+
+    if (timeoutMs > 0) {
+        m_DisplaySelectorTimer = SDL_AddTimer(timeoutMs, hideDisplaySelectorTimerCallback, this);
+    }
+}
+
 class AsyncConnectionStartThread : public QThread
 {
 public:
@@ -1877,6 +1931,11 @@ void Session::exec()
     }
 
     m_InputHandler->setWindow(m_Window);
+
+    // Initialize target display and sync input calibration
+    LiSendDisplayTarget(m_DisplayTarget);
+    m_InputHandler->setDisplayTarget(m_DisplayTarget);
+    showDisplaySelectorOverlay(2500);
 
     QSvgRenderer svgIconRenderer(QString(":/res/moonlight.svg"));
     QImage svgImage(ICON_SIZE, ICON_SIZE, QImage::Format_RGBA8888);

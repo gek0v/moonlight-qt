@@ -416,6 +416,9 @@ public:
             case Overlay::OverlayStatusUpdate:
                 [m_OverlayTextFields[type] setAlignment:NSTextAlignmentRight];
                 break;
+            case Overlay::OverlayDisplaySelector:
+                [m_OverlayTextFields[type] setAlignment:NSTextAlignmentCenter];
+                break;
             default:
                 break;
             }

@@ -447,6 +447,11 @@ void VDPAURenderer::notifyOverlayUpdated(Overlay::OverlayType type)
             overlayRect.x0 = 0;
             overlayRect.y0 = 0;
         }
+        else if (type == Overlay::OverlayDisplaySelector) {
+            // Top center
+            overlayRect.x0 = (m_DisplayWidth - newSurface->w) / 2;
+            overlayRect.y0 = 10;
+        }
 
         overlayRect.x1 = overlayRect.x0 + newSurface->w;
         overlayRect.y1 = overlayRect.y0 + newSurface->h;

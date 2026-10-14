@@ -126,14 +126,17 @@ void SdlInputHandler::handleAbsoluteFingerEvent(SDL_TouchFingerEvent* event)
             }
         }
 
+        float normX = ((float)vidrelx / dst.w) * m_MouseCalibScaleX + m_MouseCalibOffsetX;
+        float normY = ((float)vidrely / dst.h) * m_MouseCalibScaleY + m_MouseCalibOffsetY;
+
         if (isPen) {
-            LiSendPenEvent(eventType, LI_TOOL_TYPE_PEN, 0, vidrelx / dst.w, vidrely / dst.h, event->pressure,
+            LiSendPenEvent(eventType, LI_TOOL_TYPE_PEN, 0, normX, normY, event->pressure,
                            0.0f, 0.0f, LI_ROT_UNKNOWN, LI_TILT_UNKNOWN);
         }
         else
 #endif
         {
-            LiSendTouchEvent(eventType, pointerId, vidrelx / dst.w, vidrely / dst.h, event->pressure,
+            LiSendTouchEvent(eventType, pointerId, normX, normY, event->pressure,
                              0.0f, 0.0f, LI_ROT_UNKNOWN);
         }
 
@@ -196,8 +199,10 @@ void SdlInputHandler::emulateAbsoluteFingerEvent(SDL_TouchFingerEvent* event)
         short x = qMin(qMax((int)(event->x * windowWidth), dst.x), dst.x + dst.w);
         short y = qMin(qMax((int)(event->y * windowHeight), dst.y), dst.y + dst.h);
 
-        // Update the cursor position relative to the video region
-        LiSendMousePositionEvent(x - dst.x, y - dst.y, dst.w, dst.h);
+        // Update the cursor position relative to the video region with active display calibration
+        short calibX = (short)(((x - dst.x) * m_MouseCalibScaleX) + (dst.w * m_MouseCalibOffsetX));
+        short calibY = (short)(((y - dst.y) * m_MouseCalibScaleY) + (dst.h * m_MouseCalibOffsetY));
+        LiSendMousePositionEvent(calibX, calibY, dst.w, dst.h);
     }
 
     if (event->type == SDL_FINGERDOWN) {

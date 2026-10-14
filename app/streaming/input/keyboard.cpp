@@ -177,6 +177,30 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updateKeyboardGrabState();
         break;
 
+    case KeyComboSwitchDisplay1:
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected switch to Display 1 key combo (Ctrl+Alt+Shift+1)");
+        setDisplayTarget(DISPLAY_TARGET_P1);
+        break;
+
+    case KeyComboSwitchDisplay2:
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected switch to Display 2 key combo (Ctrl+Alt+Shift+2)");
+        setDisplayTarget(DISPLAY_TARGET_P2);
+        break;
+
+    case KeyComboSwitchDisplayMosaic:
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected switch to Mosaic Horizontal display key combo (Ctrl+Alt+Shift+M)");
+        setDisplayTarget(DISPLAY_TARGET_MOSAIC);
+        break;
+
+    case KeyComboSwitchDisplayMosaicV:
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected switch to Mosaic Vertical display key combo (Ctrl+Alt+Shift+3)");
+        setDisplayTarget(DISPLAY_TARGET_MOSAIC_V);
+        break;
+
     default:
         Q_UNREACHABLE();
     }
@@ -210,6 +234,19 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
         // any scancode tests to avoid issues in cases
         // where the SDLK for one shortcut collides with
         // the scancode of another.
+
+        if (event->keysym.sym == SDLK_KP_1) {
+            performSpecialKeyCombo(KeyComboSwitchDisplay1);
+            return;
+        }
+        else if (event->keysym.sym == SDLK_KP_2) {
+            performSpecialKeyCombo(KeyComboSwitchDisplay2);
+            return;
+        }
+        else if (event->keysym.sym == SDLK_KP_3) {
+            performSpecialKeyCombo(KeyComboSwitchDisplayMosaicV);
+            return;
+        }
 
         for (int i = 0; i < KeyComboMax; i++) {
             if (m_SpecialKeyCombos[i].enabled && event->keysym.sym == m_SpecialKeyCombos[i].keyCode) {

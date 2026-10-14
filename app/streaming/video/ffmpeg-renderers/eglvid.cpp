@@ -213,6 +213,11 @@ void EGLRenderer::renderOverlay(Overlay::OverlayType type, int viewportWidth, in
             // Top left
             overlayRect.x = 0;
             overlayRect.y = viewportHeight - newSurface->h;
+        }
+        else if (type == Overlay::OverlayDisplaySelector) {
+            // Top center
+            overlayRect.x = (viewportHeight > 0) ? (viewportWidth - newSurface->w) / 2.0f : 0;
+            overlayRect.y = viewportHeight - newSurface->h - 10;
         } else {
             SDL_assert(false);
         }

@@ -34,7 +34,35 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
         // Ignore synthetic mouse events
         return;
     }
-    else if (!isCaptureActive()) {
+
+    // Check if clicking interactive in-stream display selector overlay
+    if (Session::get() != nullptr &&
+        Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDisplaySelector) &&
+        event->button == SDL_BUTTON_LEFT && event->state == SDL_PRESSED && event->y <= 60) {
+        int windowWidth, windowHeight;
+        SDL_GetWindowSize(m_Window, &windowWidth, &windowHeight);
+        if (windowWidth > 0) {
+            float normX = (float)event->x / (float)windowWidth;
+            if (normX < 0.25f) {
+                setDisplayTarget(DISPLAY_TARGET_P1);
+                return;
+            }
+            else if (normX < 0.50f) {
+                setDisplayTarget(DISPLAY_TARGET_P2);
+                return;
+            }
+            else if (normX < 0.75f) {
+                setDisplayTarget(DISPLAY_TARGET_MOSAIC);
+                return;
+            }
+            else {
+                setDisplayTarget(DISPLAY_TARGET_MOSAIC_V);
+                return;
+            }
+        }
+    }
+
+    if (!isCaptureActive()) {
         if (event->button == SDL_BUTTON_LEFT && event->state == SDL_RELEASED &&
                 isMouseInVideoRegion(event->x, event->y)) {
             // Capture the mouse again if clicked when unbound.
@@ -158,7 +186,9 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
             }
         }
         if (mouseInVideoRegion || m_MouseWasInVideoRegion || m_PendingMouseButtonsAllUpOnVideoRegionLeave) {
-            LiSendMousePositionEvent((short)x, (short)y, dst.w, dst.h);
+            short calibX = (short)((x * m_MouseCalibScaleX) + (dst.w * m_MouseCalibOffsetX));
+            short calibY = (short)((y * m_MouseCalibScaleY) + (dst.h * m_MouseCalibOffsetY));
+            LiSendMousePositionEvent(calibX, calibY, dst.w, dst.h);
         }
 
         // Adjust the cursor visibility if applicable

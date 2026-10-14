@@ -119,6 +119,15 @@ public:
     };
     Q_ENUM(CaptureSysKeysMode);
 
+    enum TargetDisplay
+    {
+        TARGET_DISPLAY_1 = 0,
+        TARGET_DISPLAY_2 = 1,
+        TARGET_DISPLAY_MOSAIC = 2,
+    };
+    Q_ENUM(TargetDisplay);
+
+    Q_PROPERTY(int targetDisplay MEMBER targetDisplay NOTIFY targetDisplayChanged)
     Q_PROPERTY(int width MEMBER width NOTIFY displayModeChanged)
     Q_PROPERTY(int height MEMBER height NOTIFY displayModeChanged)
     Q_PROPERTY(int fps MEMBER fps NOTIFY displayModeChanged)
@@ -200,8 +209,10 @@ public:
     Language language;
     CaptureSysKeysMode captureSysKeysMode;
     RendererSelection rendererSelection;
+    int targetDisplay;
 
 signals:
+    void targetDisplayChanged();
     void displayModeChanged();
     void bitrateChanged();
     void unlockBitrateChanged();

@@ -152,6 +152,15 @@ public:
 
     void updatePointerRegionLock();
 
+    void setDisplayTarget(uint8_t target);
+
+    uint8_t getDisplayTarget() const
+    {
+        return m_DisplayTarget;
+    }
+
+    void updateMouseCalibration();
+
     static
     QString getUnmappedGamepads();
 
@@ -168,6 +177,10 @@ private:
         KeyComboTogglePointerRegionLock,
         KeyComboQuitAndExit,
         KeyComboToggleKeyboardGrab,
+        KeyComboSwitchDisplay1,
+        KeyComboSwitchDisplay2,
+        KeyComboSwitchDisplayMosaic,
+        KeyComboSwitchDisplayMosaicV,
         KeyComboMax
     };
 
@@ -242,6 +255,11 @@ private:
     bool m_AbsoluteMouseMode;
     bool m_AbsoluteTouchMode;
     bool m_DisabledTouchFeedback;
+    uint8_t m_DisplayTarget;
+    float m_MouseCalibOffsetX;
+    float m_MouseCalibOffsetY;
+    float m_MouseCalibScaleX;
+    float m_MouseCalibScaleY;
 
     SDL_TouchFingerEvent m_TouchDownEvent[MAX_FINGERS];
     SDL_TimerID m_LeftButtonReleaseTimer;

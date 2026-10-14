@@ -100,10 +100,31 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].scanCode = SDL_SCANCODE_S;
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].enabled = true;
 
+    // Reassign mouse mode toggle to F10 so Ctrl+Alt+Shift+M is dedicated to Mosaic display
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCombo = KeyComboToggleMouseMode;
-    m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_m;
-    m_SpecialKeyCombos[KeyComboToggleMouseMode].scanCode = SDL_SCANCODE_M;
+    m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_F10;
+    m_SpecialKeyCombos[KeyComboToggleMouseMode].scanCode = SDL_SCANCODE_F10;
     m_SpecialKeyCombos[KeyComboToggleMouseMode].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboSwitchDisplay1].keyCombo = KeyComboSwitchDisplay1;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay1].keyCode = SDLK_1;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay1].scanCode = SDL_SCANCODE_1;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay1].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboSwitchDisplay2].keyCombo = KeyComboSwitchDisplay2;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay2].keyCode = SDLK_2;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay2].scanCode = SDL_SCANCODE_2;
+    m_SpecialKeyCombos[KeyComboSwitchDisplay2].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaic].keyCombo = KeyComboSwitchDisplayMosaic;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaic].keyCode = SDLK_m;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaic].scanCode = SDL_SCANCODE_M;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaic].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaicV].keyCombo = KeyComboSwitchDisplayMosaicV;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaicV].keyCode = SDLK_3;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaicV].scanCode = SDL_SCANCODE_3;
+    m_SpecialKeyCombos[KeyComboSwitchDisplayMosaicV].enabled = true;
 
     m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCombo = KeyComboToggleCursorHide;
     m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCode = SDLK_c;
@@ -214,6 +235,9 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     SDL_zero(m_LastTouchDownEvent);
     SDL_zero(m_LastTouchUpEvent);
     SDL_zero(m_TouchDownEvent);
+
+    m_DisplayTarget = static_cast<uint8_t>(prefs.targetDisplay);
+    updateMouseCalibration();
 }
 
 SdlInputHandler::~SdlInputHandler()
@@ -426,5 +450,43 @@ void SdlInputHandler::handleTouchFingerEvent(SDL_TouchFingerEvent* event)
     }
     else {
         handleRelativeFingerEvent(event);
+    }
+}
+
+void SdlInputHandler::setDisplayTarget(uint8_t target)
+{
+    m_DisplayTarget = target;
+    updateMouseCalibration();
+    if (Session::get() != nullptr && Session::get()->getDisplayTarget() != target) {
+        Session::get()->setDisplayTarget(target);
+    }
+}
+
+void SdlInputHandler::updateMouseCalibration()
+{
+    switch (m_DisplayTarget) {
+    case DISPLAY_TARGET_P1:
+        // Left screen in dual-monitor layout
+        m_MouseCalibOffsetX = 0.0f;
+        m_MouseCalibOffsetY = 0.0f;
+        m_MouseCalibScaleX = 0.5f;
+        m_MouseCalibScaleY = 1.0f;
+        break;
+    case DISPLAY_TARGET_P2:
+        // Right screen in dual-monitor layout
+        m_MouseCalibOffsetX = 0.5f;
+        m_MouseCalibOffsetY = 0.0f;
+        m_MouseCalibScaleX = 0.5f;
+        m_MouseCalibScaleY = 1.0f;
+        break;
+    case DISPLAY_TARGET_MOSAIC:
+    case DISPLAY_TARGET_MOSAIC_V:
+    default:
+        // Full combined virtual desktop / mosaic
+        m_MouseCalibOffsetX = 0.0f;
+        m_MouseCalibOffsetY = 0.0f;
+        m_MouseCalibScaleX = 1.0f;
+        m_MouseCalibScaleY = 1.0f;
+        break;
     }
 }

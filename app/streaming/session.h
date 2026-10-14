@@ -105,6 +105,16 @@ public:
     Q_INVOKABLE void start();
     Q_INVOKABLE void interrupt();
     Q_PROPERTY(QStringList launchWarnings MEMBER m_LaunchWarnings NOTIFY launchWarningsChanged);
+    Q_PROPERTY(int displayTarget READ getDisplayTarget WRITE setDisplayTarget NOTIFY displayTargetChanged);
+
+    uint8_t getDisplayTarget() const
+    {
+        return m_DisplayTarget;
+    }
+
+    Q_INVOKABLE void setDisplayTarget(int target);
+    void updateDisplaySelectorOverlay();
+    void showDisplaySelectorOverlay(int timeoutMs = 3500);
 
     static
     void getDecoderInfo(SDL_Window* window,
@@ -126,6 +136,8 @@ public:
     void setShouldExit(bool quitHostApp = false);
 
 signals:
+    void displayTargetChanged(int displayTarget);
+
     void stageStarting(QString stage);
 
     void stageFailed(QString stage, int errorCode, QString failingPorts);
@@ -281,6 +293,10 @@ private:
     Uint32 m_DropAudioEndTime;
 
     Overlay::OverlayManager m_OverlayManager;
+    uint8_t m_DisplayTarget;
+    SDL_TimerID m_DisplaySelectorTimer;
+
+    static Uint32 hideDisplaySelectorTimerCallback(Uint32 interval, void* param);
 
     static CONNECTION_LISTENER_CALLBACKS k_ConnCallbacks;
     static Session* s_ActiveSession;
