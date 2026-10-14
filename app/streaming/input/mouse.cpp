@@ -31,8 +31,8 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
 {
     int button;
 
-    if (event->which == SDL_TOUCH_MOUSEID) {
-        // Ignore synthetic mouse events
+    if (event->which == SDL_TOUCH_MOUSEID && m_DirectTouchActive) {
+        // Ignore synthetic mouse events only if direct touchscreen is active
         return;
     }
 
@@ -137,8 +137,8 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
         }
         return;
     }
-    else if (event->which == SDL_TOUCH_MOUSEID) {
-        // Ignore synthetic mouse events
+    else if (event->which == SDL_TOUCH_MOUSEID && m_DirectTouchActive) {
+        // Ignore synthetic mouse events only if direct touchscreen is active
         return;
     }
 
@@ -148,8 +148,8 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
     while (SDL_PeepEvents(&nextEvent, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION) > 0) {
         event = &nextEvent.motion;
 
-        // Ignore synthetic mouse events
-        if (event->which != SDL_TOUCH_MOUSEID) {
+        // Ignore synthetic mouse events only if direct touchscreen is active
+        if (event->which != SDL_TOUCH_MOUSEID || !m_DirectTouchActive) {
             x = event->x;
             y = event->y;
             xrel += event->xrel;
@@ -227,8 +227,8 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         // Not capturing
         return;
     }
-    else if (event->which == SDL_TOUCH_MOUSEID) {
-        // Ignore synthetic mouse events
+    else if (event->which == SDL_TOUCH_MOUSEID && m_DirectTouchActive) {
+        // Ignore synthetic mouse events only if direct touchscreen is active
         return;
     }
 

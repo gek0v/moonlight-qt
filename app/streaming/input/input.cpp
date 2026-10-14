@@ -34,8 +34,13 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_DragTimer(0),
       m_DragButton(0),
       m_NumFingersDown(0),
-      m_SuppressedSpecialScanCode(SDL_SCANCODE_UNKNOWN)
+      m_SuppressedSpecialScanCode(SDL_SCANCODE_UNKNOWN),
+      m_DirectTouchActive(false)
 {
+    // Ensure trackpads are delivered as standard mouse events and not ignored
+    SDL_SetHint("SDL_TRACKPAD_IS_TOUCH_ONLY", "0");
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+
     // System keys are always captured when running without a DE
     if (!WMUtils::isRunningDesktopEnvironment()) {
         m_CaptureSystemKeysMode = StreamingPreferences::CSK_ALWAYS;
@@ -308,6 +313,8 @@ void SdlInputHandler::notifyFocusLost()
     // Raise all keys that are currently pressed. If we don't do this, certain keys
     // used in shortcuts that cause focus loss (such as Alt+Tab) may get stuck down.
     raiseAllKeys();
+
+    m_DirectTouchActive = false;
 }
 
 void SdlInputHandler::notifyFocusGained()
@@ -432,18 +439,35 @@ void SdlInputHandler::setCaptureActive(bool active)
 void SdlInputHandler::handleTouchFingerEvent(SDL_TouchFingerEvent* event)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 10)
-    if (SDL_GetTouchDeviceType(event->touchId) != SDL_TOUCH_DEVICE_DIRECT) {
-        // Ignore anything that isn't a touchscreen. We may get callbacks
-        // for trackpads, but we want to handle those in the mouse path.
+    SDL_TouchDeviceType devType = SDL_GetTouchDeviceType(event->touchId);
+    if (devType != SDL_TOUCH_DEVICE_DIRECT) {
+#if defined(Q_OS_DARWIN)
+        // macOS sends native mouse events for trackpads, so ignore touch events
         return;
+#else
+        // On Linux / other platforms, if this is an indirect relative touch device (trackpad),
+        // handle it via handleRelativeFingerEvent so movement is translated to mouse!
+        handleRelativeFingerEvent(event);
+        return;
+#endif
+    }
+    else {
+        if (event->type == SDL_FINGERDOWN) {
+            m_DirectTouchActive = true;
+        }
+        else if (event->type == SDL_FINGERUP && SDL_GetNumTouchFingers(event->touchId) <= 1) {
+            m_DirectTouchActive = false;
+        }
     }
 #elif defined(Q_OS_DARWIN)
-    // SDL2 sends touch events from trackpads by default on
-    // macOS. This totally screws our actual mouse handling,
-    // so we must explicitly ignore touch events on macOS
-    // until SDL 2.0.10 where we have SDL_GetTouchDeviceType()
-    // to tell them apart.
     return;
+#else
+    if (event->type == SDL_FINGERDOWN) {
+        m_DirectTouchActive = true;
+    }
+    else if (event->type == SDL_FINGERUP && SDL_GetNumTouchFingers(event->touchId) <= 1) {
+        m_DirectTouchActive = false;
+    }
 #endif
 
     if (m_AbsoluteTouchMode) {

@@ -725,6 +725,9 @@ int main(int argc, char *argv[])
     // the mouse cursor.
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_EMULATE_MOUSE_WARP, "0");
 
+    // Ensure trackpads are delivered as standard mouse events and not ignored
+    SDL_SetHint("SDL_TRACKPAD_IS_TOUCH_ONLY", "0");
+
 #ifdef QT_DEBUG
     // Allow thread naming using exceptions on debug builds. SDL doesn't use SEH
     // when throwing the exceptions, so we don't enable it for release builds out
