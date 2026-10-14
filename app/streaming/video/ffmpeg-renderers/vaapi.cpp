@@ -768,7 +768,9 @@ void VAAPIRenderer::notifyOverlayUpdated(Overlay::OverlayType type)
         }
         else if (type == Overlay::OverlayDisplaySelector) {
             // Top center
-            overlayRect.x = (m_DisplayWidth - newSurface->w) / 2;
+            int windowWidth = 0;
+            SDL_GetWindowSize(m_Window, &windowWidth, nullptr);
+            overlayRect.x = (windowWidth - newSurface->w) / 2;
             overlayRect.y = 10;
         }
 
