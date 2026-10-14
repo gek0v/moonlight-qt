@@ -2,6 +2,7 @@
 
 #include <Limelight.h>
 #include "SDL_compat.h"
+#include "streaming/session.h"
 #include "streaming/streamutils.h"
 
 void SdlInputHandler::notifyMouseLeave()
