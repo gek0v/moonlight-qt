@@ -46,6 +46,16 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         // Force raise all keys to ensure they aren't stuck,
         // since we won't get their key up events.
         raiseAllKeys();
+
+        // If mouse is uncaptured, show the Display Selector HUD so user can click it!
+        if (Session::get() != nullptr) {
+            if (!isCaptureActive()) {
+                Session::get()->showDisplaySelectorOverlay(0);
+            }
+            else {
+                Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDisplaySelector, false);
+            }
+        }
         break;
 
     case KeyComboToggleFullScreen:
@@ -179,26 +189,30 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
     case KeyComboSwitchDisplay1:
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected switch to Display 1 key combo (Ctrl+Alt+Shift+1)");
+                    "Detected switch to Display 1 key combo (Ctrl+Alt+1 or Ctrl+Alt+Shift+1)");
         setDisplayTarget(DISPLAY_TARGET_P1);
+        raiseAllKeys();
         break;
 
     case KeyComboSwitchDisplay2:
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected switch to Display 2 key combo (Ctrl+Alt+Shift+2)");
+                    "Detected switch to Display 2 key combo (Ctrl+Alt+2 or Ctrl+Alt+Shift+2)");
         setDisplayTarget(DISPLAY_TARGET_P2);
+        raiseAllKeys();
         break;
 
     case KeyComboSwitchDisplayMosaic:
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected switch to Mosaic Horizontal display key combo (Ctrl+Alt+Shift+M)");
+                    "Detected switch to Mosaic Horizontal display key combo (Ctrl+Alt+M or Ctrl+Alt+Shift+M)");
         setDisplayTarget(DISPLAY_TARGET_MOSAIC);
+        raiseAllKeys();
         break;
 
     case KeyComboSwitchDisplayMosaicV:
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected switch to Mosaic Vertical display key combo (Ctrl+Alt+Shift+3)");
+                    "Detected switch to Mosaic Vertical display key combo (Ctrl+Alt+3/4 or Ctrl+Alt+Shift+3)");
         setDisplayTarget(DISPLAY_TARGET_MOSAIC_V);
+        raiseAllKeys();
         break;
 
     default:
@@ -219,37 +233,59 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
         return;
     }
 
-    // Check for our special key combos
-    if ((event->state == SDL_PRESSED) &&
-            (event->keysym.mod & KMOD_CTRL) &&
-            (event->keysym.mod & KMOD_ALT) &&
-            (event->keysym.mod & KMOD_SHIFT)) {
-        // First we test the SDLK combos for matches,
-        // that way we ensure that latin keyboard users
-        // can match to the key they see on their keyboards.
-        // If nothing matches that, we'll then go on to
-        // checking scancodes so non-latin keyboard users
-        // can have working hotkeys (though possibly in
-        // odd positions). We must do all SDLK tests before
-        // any scancode tests to avoid issues in cases
-        // where the SDLK for one shortcut collides with
-        // the scancode of another.
+    // Suppress key release event for the shortcut key that just triggered a special combo
+    if (event->state == SDL_RELEASED && m_SuppressedSpecialScanCode != SDL_SCANCODE_UNKNOWN) {
+        if (event->keysym.scancode == m_SuppressedSpecialScanCode) {
+            m_SuppressedSpecialScanCode = SDL_SCANCODE_UNKNOWN;
+            return;
+        }
+    }
 
-        if (event->keysym.sym == SDLK_KP_1) {
+    bool hasCtrl = (event->keysym.mod & KMOD_CTRL) != 0;
+    bool hasAlt = (event->keysym.mod & (KMOD_ALT | KMOD_MODE)) != 0; // KMOD_MODE for AltGr
+    bool hasShift = (event->keysym.mod & KMOD_SHIFT) != 0;
+
+    // Direct multi-monitor shortcuts: Ctrl + Alt (+ Shift optional) + (1, 2, 3, 4, M, V, Z)
+    if (event->state == SDL_PRESSED && hasCtrl && hasAlt) {
+        if (event->keysym.sym == SDLK_1 || event->keysym.scancode == SDL_SCANCODE_1 ||
+            event->keysym.sym == SDLK_KP_1 || event->keysym.scancode == SDL_SCANCODE_KP_1) {
+            m_SuppressedSpecialScanCode = event->keysym.scancode;
             performSpecialKeyCombo(KeyComboSwitchDisplay1);
             return;
         }
-        else if (event->keysym.sym == SDLK_KP_2) {
+        else if (event->keysym.sym == SDLK_2 || event->keysym.scancode == SDL_SCANCODE_2 ||
+                 event->keysym.sym == SDLK_KP_2 || event->keysym.scancode == SDL_SCANCODE_KP_2) {
+            m_SuppressedSpecialScanCode = event->keysym.scancode;
             performSpecialKeyCombo(KeyComboSwitchDisplay2);
             return;
         }
-        else if (event->keysym.sym == SDLK_KP_3) {
+        else if (event->keysym.sym == SDLK_m || event->keysym.scancode == SDL_SCANCODE_M) {
+            m_SuppressedSpecialScanCode = event->keysym.scancode;
+            performSpecialKeyCombo(KeyComboSwitchDisplayMosaic);
+            return;
+        }
+        else if (event->keysym.sym == SDLK_3 || event->keysym.scancode == SDL_SCANCODE_3 ||
+                 event->keysym.sym == SDLK_KP_3 || event->keysym.scancode == SDL_SCANCODE_KP_3 ||
+                 event->keysym.sym == SDLK_4 || event->keysym.scancode == SDL_SCANCODE_4 ||
+                 event->keysym.sym == SDLK_KP_4 || event->keysym.scancode == SDL_SCANCODE_KP_4 ||
+                 (!hasShift && (event->keysym.sym == SDLK_v || event->keysym.scancode == SDL_SCANCODE_V))) {
+            m_SuppressedSpecialScanCode = event->keysym.scancode;
             performSpecialKeyCombo(KeyComboSwitchDisplayMosaicV);
             return;
         }
+        else if (event->keysym.sym == SDLK_z || event->keysym.scancode == SDL_SCANCODE_Z) {
+            // Ctrl+Alt+Z or Ctrl+Alt+Shift+Z toggles mouse capture and shows HUD!
+            m_SuppressedSpecialScanCode = event->keysym.scancode;
+            performSpecialKeyCombo(KeyComboUngrabInput);
+            return;
+        }
+    }
 
+    // Check for standard special key combos (Ctrl + Alt + Shift + <Key>)
+    if ((event->state == SDL_PRESSED) && hasCtrl && hasAlt && hasShift) {
         for (int i = 0; i < KeyComboMax; i++) {
             if (m_SpecialKeyCombos[i].enabled && event->keysym.sym == m_SpecialKeyCombos[i].keyCode) {
+                m_SuppressedSpecialScanCode = event->keysym.scancode;
                 performSpecialKeyCombo(m_SpecialKeyCombos[i].keyCombo);
                 return;
             }
@@ -257,6 +293,7 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
 
         for (int i = 0; i < KeyComboMax; i++) {
             if (m_SpecialKeyCombos[i].enabled && event->keysym.scancode == m_SpecialKeyCombos[i].scanCode) {
+                m_SuppressedSpecialScanCode = event->keysym.scancode;
                 performSpecialKeyCombo(m_SpecialKeyCombos[i].keyCombo);
                 return;
             }

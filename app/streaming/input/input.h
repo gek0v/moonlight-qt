@@ -256,6 +256,7 @@ private:
     bool m_AbsoluteTouchMode;
     bool m_DisabledTouchFeedback;
     uint8_t m_DisplayTarget;
+    SDL_Scancode m_SuppressedSpecialScanCode;
     float m_MouseCalibOffsetX;
     float m_MouseCalibOffsetY;
     float m_MouseCalibScaleX;

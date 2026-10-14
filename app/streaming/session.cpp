@@ -1581,7 +1581,8 @@ void Session::setDisplayTarget(int target)
     if (m_InputHandler != nullptr) {
         m_InputHandler->setDisplayTarget(m_DisplayTarget);
     }
-    showDisplaySelectorOverlay(3500);
+    int timeout = (m_InputHandler != nullptr && !m_InputHandler->isCaptureActive()) ? 0 : 3500;
+    showDisplaySelectorOverlay(timeout);
     emit displayTargetChanged(m_DisplayTarget);
 }
 

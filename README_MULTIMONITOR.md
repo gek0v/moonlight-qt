@@ -35,30 +35,32 @@ int LiSendDisplayTarget(uint8_t displayTarget);
 
 ## 2. Atajos de Teclado en el Stream
 
-Durante la sesión activa de streaming, el usuario puede alternar instantáneamente la pantalla mostrada utilizando los siguientes atajos globales:
+Durante la sesión activa de streaming, el usuario puede alternar instantáneamente la pantalla mostrada utilizando atajos rápidos (funcionan tanto con `Ctrl + Alt` como con `Ctrl + Alt + Shift`, y admiten AltGr):
 
-| Atajo | Acción | Destino |
-|---|---|---|
-| **`Ctrl + Alt + Shift + 1`** (o Numpad 1) | Conmuta a la primera pantalla remota | Pantalla 1 (P1) |
-| **`Ctrl + Alt + Shift + 2`** (o Numpad 2) | Conmuta a la segunda pantalla remota | Pantalla 2 (P2) |
-| **`Ctrl + Alt + Shift + M`** | Muestra ambas pantallas lado a lado | Mosaico Horizontal |
-| **`Ctrl + Alt + Shift + 3`** (o Numpad 3) | Muestra ambas pantallas una arriba y otra abajo | Mosaico Vertical |
+| Atajo Rápido | Atajo Completo | Acción | Destino |
+|---|---|---|---|
+| **`Ctrl + Alt + 1`** | `Ctrl + Alt + Shift + 1` | Conmuta a la primera pantalla remota | Pantalla 1 (P1) |
+| **`Ctrl + Alt + 2`** | `Ctrl + Alt + Shift + 2` | Conmuta a la segunda pantalla remota | Pantalla 2 (P2) |
+| **`Ctrl + Alt + M`** | `Ctrl + Alt + Shift + M` | Muestra ambas pantallas lado a lado | Mosaico Horizontal |
+| **`Ctrl + Alt + 3`** (o 4/V) | `Ctrl + Alt + Shift + 3` | Muestra ambas pantallas una arriba y otra abajo | Mosaico Vertical |
+| **`Ctrl + Alt + Z`** | `Ctrl + Alt + Shift + Z` | **Liberar/Capturar ratón y mostrar HUD** | Alterna ratón libre / capturado |
 
+> **Nota sobre supresión de teclas:** Todos los atajos interceptan y limpian inmediatamente los modificadores (`Ctrl`, `Alt`, `Shift`) y suprimen el evento de liberación (`key up`), evitando que cualquier pulsación se filtre al host o al juego.
+>
 > **Nota sobre compatibilidad:** El atajo previo de Moonlight `Ctrl + Alt + Shift + M` (que alternaba el modo de captura del ratón) ha sido reasignado a `Ctrl + Alt + Shift + F10` para garantizar que la letra **`M`** quede reservada intuitivamente para **Mosaico**.
 
 ---
 
 ## 3. Selector Visual Interactivo en el Overlay y Menú
 
-### Overlay en Stream (`OverlayDisplaySelector`)
-Al presionar cualquiera de los atajos de cambio de pantalla o al iniciar el stream:
-1. Se activa en la parte superior central de la ventana de renderizado un selector visual interactivo:
+### Liberar el ratón y usar el HUD
+1. **Sacar el ratón:** Presiona **`Ctrl + Alt + Z`** (o `Ctrl + Alt + Shift + Z`). El cursor del ratón se liberará del juego y aparecerá de forma fija el HUD interactivo en la parte superior:
    ```
    [ *1: Pantalla 1* ]   [ 2: Pantalla 2 ]   [ M: Mosaico H ]   [ V: Mosaico V ]
    ```
-   El elemento con asteriscos `*` resalta cuál es la pantalla activa actual.
-2. **Interactividad con ratón:** El overlay es interactivo con el puntero. Si el usuario hace clic izquierdo sobre cualquiera de los 4 cuadrantes de la franja superior durante su visualización, la sesión conmuta inmediatamente a P1, P2, Mosaico H o Mosaico V, respectivamente.
-3. El overlay permanece visible durante 3.5 segundos tras cada interacción y se desvanece automáticamente para no interferir con la experiencia visual o de juego.
+2. **Hacer clic en los botones:** Con el ratón libre, haz clic izquierdo sobre cualquiera de los 4 cuadrantes para cambiar inmediatamente entre monitores y modos mosaico. El ratón permanecerá libre para que puedas elegir cómodamente.
+3. **Volver al juego:** Haz clic en cualquier parte de la pantalla debajo de la franja superior (o vuelve a presionar `Ctrl + Alt + Z`) para recapturar el ratón en el juego y ocultar el HUD.
+4. **Notificación en atajos directos:** Si usas los atajos de teclado directamente (`Ctrl + Alt + 1/2/M/3`), el overlay aparecerá temporalmente durante 3.5 segundos confirmando el cambio y se ocultará automáticamente sin interferir con el juego.
 4. Soporte nativo integrado en todos los renderizadores de vídeo de Moonlight:
    - DirectX 11 (`d3d11va`)
    - DirectX 9 (`dxva2`)

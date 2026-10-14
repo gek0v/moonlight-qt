@@ -39,39 +39,48 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
     // Check if clicking interactive in-stream display selector overlay
     if (Session::get() != nullptr &&
         Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDisplaySelector) &&
-        event->button == SDL_BUTTON_LEFT && event->state == SDL_PRESSED && event->y <= 60) {
-        int windowWidth, windowHeight;
-        SDL_GetWindowSize(m_Window, &windowWidth, &windowHeight);
-        if (windowWidth > 0) {
-            float normX = (float)event->x / (float)windowWidth;
-            if (normX < 0.25f) {
-                setDisplayTarget(DISPLAY_TARGET_P1);
-                return;
+        event->button == SDL_BUTTON_LEFT && event->y <= 60) {
+        if (event->state == SDL_PRESSED) {
+            int windowWidth, windowHeight;
+            SDL_GetWindowSize(m_Window, &windowWidth, &windowHeight);
+            if (windowWidth > 0) {
+                float normX = (float)event->x / (float)windowWidth;
+                if (normX < 0.25f) {
+                    setDisplayTarget(DISPLAY_TARGET_P1);
+                    return;
+                }
+                else if (normX < 0.50f) {
+                    setDisplayTarget(DISPLAY_TARGET_P2);
+                    return;
+                }
+                else if (normX < 0.75f) {
+                    setDisplayTarget(DISPLAY_TARGET_MOSAIC);
+                    return;
+                }
+                else {
+                    setDisplayTarget(DISPLAY_TARGET_MOSAIC_V);
+                    return;
+                }
             }
-            else if (normX < 0.50f) {
-                setDisplayTarget(DISPLAY_TARGET_P2);
-                return;
-            }
-            else if (normX < 0.75f) {
-                setDisplayTarget(DISPLAY_TARGET_MOSAIC);
-                return;
-            }
-            else {
-                setDisplayTarget(DISPLAY_TARGET_MOSAIC_V);
-                return;
-            }
+        }
+        else {
+            // Consume button release on the HUD so it does not trigger recapture
+            return;
         }
     }
 
     if (!isCaptureActive()) {
         if (event->button == SDL_BUTTON_LEFT && event->state == SDL_RELEASED &&
-                isMouseInVideoRegion(event->x, event->y)) {
-            // Capture the mouse again if clicked when unbound.
+                event->y > 60 && isMouseInVideoRegion(event->x, event->y)) {
+            // Capture the mouse again if clicked into stream area when unbound.
             // We start capture on left button released instead of
             // pressed to avoid sending an errant mouse button released
             // event to the host when clicking into our window (since
             // the pressed event was consumed by this code).
             setCaptureActive(true);
+            if (Session::get() != nullptr) {
+                Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDisplaySelector, false);
+            }
         }
 
         // Not capturing
@@ -122,7 +131,10 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
 void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 {
     if (!isCaptureActive()) {
-        // Not capturing
+        // While mouse is uncaptured, ensure HUD is visible if near top
+        if (Session::get() != nullptr && event->y <= 60) {
+            Session::get()->showDisplaySelectorOverlay(0);
+        }
         return;
     }
     else if (event->which == SDL_TOUCH_MOUSEID) {
