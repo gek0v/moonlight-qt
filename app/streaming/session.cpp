@@ -1976,6 +1976,8 @@ void Session::exec()
     // constrain the motion of the cursor. This allows the user to
     // easily reposition or resize the window.
     if (m_IsFullScreen || m_Preferences->absoluteMouseMode) {
+        m_InputHandler->setCaptureActive(true);
+
         // HACK: For Wayland, we wait until we get the first SDL_WINDOWEVENT_ENTER
         // event where it seems to work consistently on GNOME. For other platforms,
         // especially where SDL may call SDL_RecreateWindow(), we must only capture

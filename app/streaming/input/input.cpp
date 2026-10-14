@@ -35,7 +35,8 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_DragButton(0),
       m_NumFingersDown(0),
       m_SuppressedSpecialScanCode(SDL_SCANCODE_UNKNOWN),
-      m_DirectTouchActive(false)
+      m_DirectTouchActive(false),
+      m_UngrabbedByUser(false)
 {
     // Ensure trackpads are delivered as standard mouse events and not ignored
     SDL_SetHint("SDL_TRACKPAD_IS_TOUCH_ONLY", "0");
@@ -319,6 +320,9 @@ void SdlInputHandler::notifyFocusLost()
 
 void SdlInputHandler::notifyFocusGained()
 {
+    if (!m_UngrabbedByUser && m_Window != nullptr) {
+        setCaptureActive(true);
+    }
 }
 
 bool SdlInputHandler::isCaptureActive()
@@ -441,15 +445,9 @@ void SdlInputHandler::handleTouchFingerEvent(SDL_TouchFingerEvent* event)
 #if SDL_VERSION_ATLEAST(2, 0, 10)
     SDL_TouchDeviceType devType = SDL_GetTouchDeviceType(event->touchId);
     if (devType != SDL_TOUCH_DEVICE_DIRECT) {
-#if defined(Q_OS_DARWIN)
-        // macOS sends native mouse events for trackpads, so ignore touch events
+        // Ignore anything that isn't a touchscreen. We may get callbacks
+        // for trackpads, but we want to handle those in the mouse path.
         return;
-#else
-        // On Linux / other platforms, if this is an indirect relative touch device (trackpad),
-        // handle it via handleRelativeFingerEvent so movement is translated to mouse!
-        handleRelativeFingerEvent(event);
-        return;
-#endif
     }
     else {
         if (event->type == SDL_FINGERDOWN) {

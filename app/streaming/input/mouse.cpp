@@ -70,21 +70,24 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
     }
 
     if (!isCaptureActive()) {
-        if (event->button == SDL_BUTTON_LEFT && event->state == SDL_RELEASED &&
-                event->y > 60 && isMouseInVideoRegion(event->x, event->y)) {
-            // Capture the mouse again if clicked into stream area when unbound.
-            // We start capture on left button released instead of
-            // pressed to avoid sending an errant mouse button released
-            // event to the host when clicking into our window (since
-            // the pressed event was consumed by this code).
+        if (!m_UngrabbedByUser && isMouseInVideoRegion(event->x, event->y)) {
+            // If the user didn't intentionally ungrab, auto-capture immediately!
             setCaptureActive(true);
-            if (Session::get() != nullptr) {
-                Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDisplaySelector, false);
-            }
         }
+        else {
+            if (event->button == SDL_BUTTON_LEFT && event->state == SDL_RELEASED &&
+                    event->y > 60 && isMouseInVideoRegion(event->x, event->y)) {
+                // User clicked into stream area while uncaptured: recapture!
+                m_UngrabbedByUser = false;
+                setCaptureActive(true);
+                if (Session::get() != nullptr) {
+                    Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDisplaySelector, false);
+                }
+            }
 
-        // Not capturing
-        return;
+            // Not capturing
+            return;
+        }
     }
     else if (m_AbsoluteMouseMode && !isMouseInVideoRegion(event->x, event->y) && event->state == SDL_PRESSED) {
         // Ignore button presses outside the video region, but allow button releases
@@ -131,13 +134,20 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
 void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 {
     if (!isCaptureActive()) {
-        // While mouse is uncaptured, ensure HUD is visible if near top
-        if (Session::get() != nullptr && event->y <= 60) {
-            Session::get()->showDisplaySelectorOverlay(0);
+        if (!m_UngrabbedByUser && isMouseInVideoRegion(event->x, event->y)) {
+            // Auto-capture mouse on motion if inside video region and not ungrabbed by user
+            setCaptureActive(true);
         }
-        return;
+        else {
+            // While mouse is uncaptured, ensure HUD is visible if near top
+            if (Session::get() != nullptr && event->y <= 60) {
+                Session::get()->showDisplaySelectorOverlay(0);
+            }
+            return;
+        }
     }
-    else if (event->which == SDL_TOUCH_MOUSEID && m_DirectTouchActive) {
+
+    if (event->which == SDL_TOUCH_MOUSEID && m_DirectTouchActive) {
         // Ignore synthetic mouse events only if direct touchscreen is active
         return;
     }

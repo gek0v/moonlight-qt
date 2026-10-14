@@ -229,6 +229,7 @@ private:
     bool m_PointerRegionLockActive;
     bool m_PointerRegionLockToggledByUser;
     bool m_DirectTouchActive;
+    bool m_UngrabbedByUser;
 
     int m_GamepadMask;
     GamepadState m_GamepadState[MAX_GAMEPADS];
